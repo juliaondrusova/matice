@@ -193,7 +193,7 @@ int hladaj_nuly (MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 
 	int i,j;
 	int pocitadlo_nul=0;
-	
+
 	if (riadok > mat->rows) return riadok-1;
 	// Prechádzaj všetky stĺpce
 	for (j = stlpec; j<mat->cols; j++) {
@@ -253,11 +253,7 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 	*c=zaciat_stlpec;
 	*d=koniec_stlpec;
 
-	if (max_rozmer<2)
-		return 0;
-
-	else
-		return 1;
+	return max_rozmer;
 
 
 }
@@ -267,7 +263,7 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 int hladaj_nuly1(MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 	int i, j;
 	int pocitadlo_nul = 0;
-	
+
 	if(riadok<0) return 0;
 
 	// Prechádzaj všetky stĺpce
@@ -322,12 +318,39 @@ int find_triangular_block1(MAT* mat, unsigned int* a, unsigned int* b, unsigned 
 	*c = zaciat_stlpec;
 	*d = koniec_stlpec;
 
-	if (max_rozmer<2)
+	return max_rozmer;
+
+
+}
+
+
+int najvacsia_trojuholnikova_matica (MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
+
+	unsigned int aa, bb, cc, dd;
+	unsigned int ee, ff, gg, hh;
+
+	int rozmer= find_triangular_block(mat, &aa, &bb, &cc, &dd);
+	int rozmer1= find_triangular_block1(mat, &ee, &ff, &gg, &hh);
+
+	if (rozmer>rozmer1) {
+		*a=aa;
+		*b=bb;
+		*c=cc;
+		*d=dd;
+	}
+
+	else {
+		*a=ee;
+		*b=ff;
+		*c=gg;
+		*d=hh;
+	}
+
+	if (rozmer1 <1 && rozmer<1)
 		return 0;
 
 	else
 		return 1;
-
 
 }
 
@@ -362,8 +385,7 @@ main() {
 	if (loaded_mat == NULL) {
 		printf("Nacitanie matice zo suboru sa nepodarilo.\n");
 		return 1;
-	}
-	else
+	} else
 		printf("\nMatica bola nacitana zo suboru '%s'\n", filename1);
 
 	// Vypis nacitanej matice
@@ -372,7 +394,7 @@ main() {
 
 
 	unsigned int a, b, c, d;
-	int vysledok=find_triangular_block1(loaded_mat, &a, &b, &c, &d);
+	int vysledok=najvacsia_trojuholnikova_matica(loaded_mat, &a, &b, &c, &d);
 
 	if (vysledok) {
 
