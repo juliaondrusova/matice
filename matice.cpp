@@ -115,7 +115,7 @@ MAT* mat_create_by_file(char* filename) {
 		fclose(file);
 		return NULL;
 	}
-	
+
 	if (fscanf(file, "%u", &stlpce) !=1) {
 		fclose(file);
 		return NULL;
@@ -182,11 +182,85 @@ void mat_print(MAT* mat) {
 	for (i = 0; i < mat->rows; i++) {
 		for (j = 0; j < mat->cols; j++) {
 			//formatovanie take, aby boli dostatocne medzery medzi prvkami
-			printf("%10.2f ", ELEM(*mat, i, j));
+			printf("%7.2f ", ELEM(*mat, i, j));
 		}
 		printf("\n");
 	}
 }
+
+
+int hladaj_nuly (MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
+
+	int i,j;
+	int pocitadlo_nul=0;
+
+	// Prechádzaj všetky stĺpce
+	for (j = stlpec; j<mat->cols; j++) {
+
+		if (ELEM(*mat, riadok,j)==0) {
+			pocitadlo_nul++;
+			if (pocitadlo_nul==ziadany_pocet_nul) {
+				int max_riadok= hladaj_nuly(mat, riadok+1, stlpec, ziadany_pocet_nul+1);
+
+				if (max_riadok>riadok) {
+					return max_riadok;
+				} else
+					return riadok;
+			}
+
+		} else
+			return riadok-1;
+	}
+	return riadok-1;
+}
+
+
+
+int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
+	unsigned int max_rozmer = 0;  // Veľkosť najväčšieho nájdeného bloku
+	unsigned int aktual_rozmer = 0;  // Veľkosť aktuálneho bloku
+	unsigned int zaciat_riadok = 0;  // Riadok, kde začína aktuálny blok
+	unsigned int koniec_riadok = 0;  // Riadok, kde končí aktuálny blok
+	unsigned int zaciat_stlpec = 0;  // Stĺpec, kde začína aktuálny blok
+	unsigned int koniec_stlpec = 0;  // Stĺpec, kde končí aktuálny blok
+
+	int i, j;
+
+	int rozdiel_riadkov;
+
+	// Prechádzaj všetky riadky
+	for (i=0; i<mat->rows; i++) {
+		// Prechádzaj všetky stĺpce
+		for (j = 0; j<mat->cols; j++) {
+			if (ELEM(*mat, i, j)==0.0) {
+
+				rozdiel_riadkov=hladaj_nuly(mat, i+1, j, 2)-i;
+
+				if ((rozdiel_riadkov+1)>max_rozmer) {
+					max_rozmer=rozdiel_riadkov+1;
+					zaciat_riadok=i;
+					zaciat_stlpec=j;
+					koniec_riadok=i+rozdiel_riadkov;
+					koniec_stlpec=j+rozdiel_riadkov;
+				}
+			}
+		}
+	}
+
+	*a=zaciat_riadok;
+	*b=koniec_riadok;
+	*c=zaciat_stlpec;
+	*d=koniec_stlpec;
+
+	if (max_rozmer<2)
+		return 0;
+
+	else
+		return 1;
+
+
+	}
+
 
 
 
@@ -195,7 +269,7 @@ void mat_print(MAT* mat) {
 main() {
 
 // Vytvorenie matice
-	MAT* mat = mat_create_with_type(10, 9);
+	MAT* mat = mat_create_with_type(6, 6);
 
 
 // Vygenerovanie nahodnych hodnot pre maticu
@@ -225,8 +299,23 @@ main() {
 	// Vypis nacitanej matice
 	printf("Nacitana matica:\n");
 	mat_print(loaded_mat);
-	
 
+
+	unsigned int a, b, c, d;
+	int vysledok=find_triangular_block(loaded_mat, &a, &b, &c, &d);
+
+	if (vysledok) {
+
+		printf("Najvacsi suvisly blok v trojuholnikovom tvare:\n");
+		printf("Zaciatok riadku: %u\n", a);
+		printf("Koniec riadku: %u\n", b);
+		printf("Zaciatok stlpca: %u\n", c);
+		printf("Koniec stlpca: %u\n", d);
+
+	}
+
+	else
+		printf ("blok sa nenasiel");
 
 // Uvolnenie pamate
 	mat_destroy(mat);
