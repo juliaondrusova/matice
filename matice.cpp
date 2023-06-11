@@ -188,12 +188,13 @@ void mat_print(MAT* mat) {
 	}
 }
 
-
+//pomocna funkcia pre dolnu trojuholnikovu maticu
 int hladaj_nuly (MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 
 	int i,j;
 	int pocitadlo_nul=0;
-
+	
+	if (riadok > mat->rows) return riadok-1;
 	// Prechádzaj všetky stĺpce
 	for (j = stlpec; j<mat->cols; j++) {
 
@@ -215,7 +216,7 @@ int hladaj_nuly (MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 }
 
 
-
+//funkcia hlada dolnu trojuholnikovu maticu
 int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
 	unsigned int max_rozmer = 0;  // Veľkosť najväčšieho nájdeného bloku
 	unsigned int aktual_rozmer = 0;  // Veľkosť aktuálneho bloku
@@ -259,8 +260,76 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 		return 1;
 
 
+}
+
+
+//pomocna funkcia pre hornu trojuholnikovu maticu
+int hladaj_nuly1(MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
+	int i, j;
+	int pocitadlo_nul = 0;
+	
+	if(riadok<0) return 0;
+
+	// Prechádzaj všetky stĺpce
+	for (j = stlpec; j >= 0; j--) {
+		if (ELEM(*mat, riadok, j) == 0.0) {
+			pocitadlo_nul++;
+			if (pocitadlo_nul == ziadany_pocet_nul) {
+				int max_riadok = hladaj_nuly1(mat, riadok - 1, stlpec, ziadany_pocet_nul + 1);
+				if (max_riadok < riadok)
+					return max_riadok;
+				else
+					return riadok;
+			}
+		} else
+			return riadok + 1;
+	}
+	return riadok + 1;
+}
+
+//funkcia hlada hornu trojuholnikovu maticu
+int find_triangular_block1(MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
+	unsigned int max_rozmer = 0;  // Veľkosť najväčšieho nájdeného bloku
+	unsigned int aktual_rozmer = 0;  // Veľkosť aktuálneho bloku
+	unsigned int zaciat_riadok = 0;  // Riadok, kde začína aktuálny blok
+	unsigned int koniec_riadok = 0;  // Riadok, kde končí aktuálny blok
+	unsigned int zaciat_stlpec = 0;  // Stĺpec, kde začína aktuálny blok
+	unsigned int koniec_stlpec = 0;  // Stĺpec, kde končí aktuálny blok
+
+	int i, j;
+	int rozdiel_riadkov;
+
+	// Prechádzaj všetky riadky od posledného po prvý
+	for (i = mat->rows - 1; i >= 0; i--) {
+		// Prechádzaj všetky stĺpce
+		for (j = mat->cols - 1; j >= 0; j--) {
+			if (ELEM(*mat, i, j) == 0.0) {
+				rozdiel_riadkov = i - hladaj_nuly1(mat, i - 1, j, 2);
+
+				if ((rozdiel_riadkov + 1) > max_rozmer) {
+					max_rozmer = rozdiel_riadkov + 1;
+					zaciat_riadok = i - rozdiel_riadkov;
+					zaciat_stlpec = j - rozdiel_riadkov;
+					koniec_riadok = i;
+					koniec_stlpec = j;
+				}
+			}
+		}
 	}
 
+	*a = zaciat_riadok;
+	*b = koniec_riadok;
+	*c = zaciat_stlpec;
+	*d = koniec_stlpec;
+
+	if (max_rozmer<2)
+		return 0;
+
+	else
+		return 1;
+
+
+}
 
 
 
@@ -269,7 +338,7 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 main() {
 
 // Vytvorenie matice
-	MAT* mat = mat_create_with_type(6, 6);
+	MAT* mat = mat_create_with_type(4, 4);
 
 
 // Vygenerovanie nahodnych hodnot pre maticu
@@ -286,15 +355,16 @@ main() {
 	}
 
 	printf("Matica bola zapisana do suboru '%s'\n", filename);
-
-
+	char filename1[] = "matrix1.txt";
 	// Nacitanie matice zo suboru
-	MAT* loaded_mat = mat_create_by_file(filename);
+	MAT* loaded_mat = mat_create_by_file(filename1);
 
 	if (loaded_mat == NULL) {
 		printf("Nacitanie matice zo suboru sa nepodarilo.\n");
 		return 1;
 	}
+	else
+		printf("\nMatica bola nacitana zo suboru '%s'\n", filename1);
 
 	// Vypis nacitanej matice
 	printf("Nacitana matica:\n");
@@ -302,11 +372,11 @@ main() {
 
 
 	unsigned int a, b, c, d;
-	int vysledok=find_triangular_block(loaded_mat, &a, &b, &c, &d);
+	int vysledok=find_triangular_block1(loaded_mat, &a, &b, &c, &d);
 
 	if (vysledok) {
 
-		printf("Najvacsi suvisly blok v trojuholnikovom tvare:\n");
+		printf("\nNajvacsi suvisly blok v trojuholnikovom tvare:\n");
 		printf("Zaciatok riadku: %u\n", a);
 		printf("Koniec riadku: %u\n", b);
 		printf("Zaciatok stlpca: %u\n", c);
@@ -315,7 +385,7 @@ main() {
 	}
 
 	else
-		printf ("blok sa nenasiel");
+		printf ("Blok sa nenasiel");
 
 // Uvolnenie pamate
 	mat_destroy(mat);
