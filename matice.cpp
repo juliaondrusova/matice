@@ -93,21 +93,21 @@ char mat_save(MAT *mat, char *filename) {
 MAT* mat_create_by_file(char* filename) {
 	int i;
 
-	// otvorenie súboru na čítanie (rb- binárny)
+	// otvorenie suboru na citanie (rb- binarny)
 	FILE* file = fopen(filename, "rb");
 
-	// ošetrenie, či bol súbor úspešne otvorený
+	// osetrenie, ci bol súbor uspesne otvoreny
 	if (file == NULL)
 		return NULL;
 
-	// ošetrenie, či naozaj sa v súbore nachádza "M 1"
+	// osetrenie, ci sa naozaj v subore nachadza "M 1"
 	char prve_znaky[4];
 	if (fgets(prve_znaky, sizeof(prve_znaky), file) == NULL || strncmp(prve_znaky, "M 1", 3) != 0) {
 		fclose(file);
 		return NULL;
 	}
 
-	// načítanie počtu riadkov a stĺpcov
+	// nacitanie poctu riadkov a stlpcov
 	unsigned int riadky, stlpce;
 
 
@@ -121,14 +121,14 @@ MAT* mat_create_by_file(char* filename) {
 		return NULL;
 	}
 
-	// vytvorenie matice
+	// vytvorenie matice (resp. jej reprezentacie v pamati)
 	MAT* matica = mat_create_with_type(riadky, stlpce);
 	if (matica == NULL) {
 		fclose(file);
 		return NULL;
 	}
 
-	// nacítanie prvkov matice
+	// nacitanie prvkov matice
 	unsigned int prvky_matice = riadky * stlpce;
 	for (i = 0; i < prvky_matice; i++) {
 		if (fscanf(file, "%f", &matica->elem[i]) != 1) {
@@ -138,10 +138,10 @@ MAT* mat_create_by_file(char* filename) {
 		}
 	}
 
-	// zatvorenie súboru
+	// zatvorenie suboru
 	fclose(file);
 
-	// vrátime adresu vytvorenej reprezentácie matice
+	// vratime adresu vytvorenej reprezentacie matice
 	return matica;
 }
 
@@ -149,10 +149,11 @@ MAT* mat_create_by_file(char* filename) {
 
 
 void mat_unit(MAT *mat) {
-	unsigned int i, j;
-	for (i = 0; i < mat->rows; i++) {
-		for (j = 0; j < mat->cols; j++) {
-			if (i == j)
+
+	int i, j;
+	for (i=0; i< mat->rows; i++) {
+		for (j=0; j<mat->cols; j++) {
+			if (i==j)
 				ELEM(*mat, i, j) = 1.0;  // prvok na diagonale
 			else
 				ELEM(*mat, i, j) = 0.0;  // ostatne prvky
@@ -163,11 +164,11 @@ void mat_unit(MAT *mat) {
 
 
 void mat_random(MAT *mat) {
-	unsigned int i, j;
+	int i, j;
 	srand(time(NULL)); // generator nahodnych cisel
 
-	for (i = 0; i < mat->rows; i++) {
-		for (j = 0; j < mat->cols; j++) {
+	for (i=0; i<mat->rows; i++) {
+		for (j=0; j<mat->cols; j++) {
 			// generovanie nahodnej hodnoty v intervale -1 až +1
 			ELEM(*mat, i, j) = ((float)rand() / RAND_MAX) * 2 - 1;
 		}
@@ -179,8 +180,8 @@ void mat_random(MAT *mat) {
 void mat_print(MAT* mat) {
 	int i, j;
 
-	for (i = 0; i < mat->rows; i++) {
-		for (j = 0; j < mat->cols; j++) {
+	for (i= 0; i < mat->rows; i++) {
+		for (j= 0; j < mat->cols; j++) {
 			//formatovanie take, aby boli dostatocne medzery medzi prvkami
 			printf("%7.2f ", ELEM(*mat, i, j));
 		}
@@ -194,49 +195,63 @@ int hladaj_nuly (MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 	int i,j;
 	int pocitadlo_nul=0;
 
-	if (riadok > mat->rows) return riadok-1;
-	// Prechádzaj všetky stĺpce
+	// zarazka, aby funkcia nebezala do nekonecna
+	if (riadok > mat->rows)
+		return riadok-1;
+
+	// prechadzaj vsetky stlpce
 	for (j = stlpec; j<mat->cols; j++) {
 
+		//ak je prvok rovny 0, tak inkrementuj pocitadlo_nul
 		if (ELEM(*mat, riadok,j)==0) {
 			pocitadlo_nul++;
+
+			// ak sme nasli ziadany_pocet_nul, tak sa vnarame hlbsie do funkcie
 			if (pocitadlo_nul==ziadany_pocet_nul) {
+
+				//rekurzivna funkcia
 				int max_riadok= hladaj_nuly(mat, riadok+1, stlpec, ziadany_pocet_nul+1);
 
+				//ak sa funkcia dostala o riadok nizsie, tak vraciame prave ten riadok
 				if (max_riadok>riadok) {
 					return max_riadok;
-				} else
+				}
+				//ak sa funkcia nedostala o riadok nizsie, tak vraciame uz predtym "najdeny" riadok
+				else
 					return riadok;
 			}
-
-		} else
+		}
+		// ak prvok nie je rovny 0, tak vratime riadok pred inkrementovanim (resp. ten co sme nasli uz predtym)
+		else
 			return riadok-1;
 	}
+	//ak sa dostaneme na posledny stlpec, tak vratime uz predtym "najdeny" riadok
 	return riadok-1;
 }
 
 
 //funkcia hlada dolnu trojuholnikovu maticu
 int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
-	unsigned int max_rozmer = 0;  // Veľkosť najväčšieho nájdeného bloku
-	unsigned int aktual_rozmer = 0;  // Veľkosť aktuálneho bloku
-	unsigned int zaciat_riadok = 0;  // Riadok, kde začína aktuálny blok
-	unsigned int koniec_riadok = 0;  // Riadok, kde končí aktuálny blok
-	unsigned int zaciat_stlpec = 0;  // Stĺpec, kde začína aktuálny blok
-	unsigned int koniec_stlpec = 0;  // Stĺpec, kde končí aktuálny blok
+	unsigned int max_rozmer = 0;  // velkost najvacsieho najdeneho bloku
+	unsigned int aktual_rozmer = 0;  // velkost aktualneho bloku
+	unsigned int zaciat_riadok = 0;  // riadok, kde zacina aktualny blok
+	unsigned int koniec_riadok = 0;  // riadok, kde konci aktualny blok
+	unsigned int zaciat_stlpec = 0;  // stlpec, kde zacina aktualny blok
+	unsigned int koniec_stlpec = 0;  // sltpec, kde konci aktualny blok
 
 	int i, j;
-
 	int rozdiel_riadkov;
 
-	// Prechádzaj všetky riadky
+	// prechadzaj vvetky riadky
 	for (i=0; i<mat->rows; i++) {
-		// Prechádzaj všetky stĺpce
+		// prechedzaj vsetky stlpce
 		for (j = 0; j<mat->cols; j++) {
+			
+			//ak je prvok rovny 0, tak volame funkciu hladaj_nuly
 			if (ELEM(*mat, i, j)==0.0) {
-
 				rozdiel_riadkov=hladaj_nuly(mat, i+1, j, 2)-i;
 
+				//ak najdeney blok je vacsi ako doterajsi, tak aktualizuj hodnoty premennych
 				if ((rozdiel_riadkov+1)>max_rozmer) {
 					max_rozmer=rozdiel_riadkov+1;
 					zaciat_riadok=i;
@@ -248,11 +263,13 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 		}
 	}
 
+	//priradenie najdenych hodnot
 	*a=zaciat_riadok;
 	*b=koniec_riadok;
 	*c=zaciat_stlpec;
 	*d=koniec_stlpec;
 
+	//vraciame maximalny najdeny blok
 	return max_rozmer;
 
 
@@ -260,13 +277,16 @@ int find_triangular_block(MAT* mat, unsigned int* a, unsigned int* b, unsigned i
 
 
 //pomocna funkcia pre hornu trojuholnikovu maticu
+//pracuje podobne ako funkcia hladaj_nuly, no ideme od posledneho prvku smerom hore
 int hladaj_nuly1(MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 	int i, j;
 	int pocitadlo_nul = 0;
 
-	if(riadok<0) return 0;
+	//zarazka- ak je riadok mensi ako 0, tak opustame funkciu
+	if(riadok<0) 
+		return 0;
 
-	// Prechádzaj všetky stĺpce
+	// prechadzaj vsetky stlpce
 	for (j = stlpec; j >= 0; j--) {
 		if (ELEM(*mat, riadok, j) == 0.0) {
 			pocitadlo_nul++;
@@ -284,20 +304,21 @@ int hladaj_nuly1(MAT* mat, int riadok, int stlpec, int ziadany_pocet_nul) {
 }
 
 //funkcia hlada hornu trojuholnikovu maticu
+//pracuje podobne ako funkcia find_triangular_block, no ideme od posledneho prvku smerom hore
 int find_triangular_block1(MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
-	unsigned int max_rozmer = 0;  // Veľkosť najväčšieho nájdeného bloku
-	unsigned int aktual_rozmer = 0;  // Veľkosť aktuálneho bloku
-	unsigned int zaciat_riadok = 0;  // Riadok, kde začína aktuálny blok
-	unsigned int koniec_riadok = 0;  // Riadok, kde končí aktuálny blok
-	unsigned int zaciat_stlpec = 0;  // Stĺpec, kde začína aktuálny blok
-	unsigned int koniec_stlpec = 0;  // Stĺpec, kde končí aktuálny blok
+	unsigned int max_rozmer = 0;  // velkost najvacsieho najdeneho bloku
+	unsigned int aktual_rozmer = 0;  // velkost aktualneho bloku
+	unsigned int zaciat_riadok = 0;  // riadok, kde zacina aktualny blok
+	unsigned int koniec_riadok = 0;  // riadok, kde konci aktualny blok
+	unsigned int zaciat_stlpec = 0;  // stlpec, kde zacina aktualny blok
+	unsigned int koniec_stlpec = 0;  // stlpec, kde konci aktualny blok
 
 	int i, j;
 	int rozdiel_riadkov;
 
-	// Prechádzaj všetky riadky od posledného po prvý
+	// prechadzaj vsetky riadky od posledneho po prvy
 	for (i = mat->rows - 1; i >= 0; i--) {
-		// Prechádzaj všetky stĺpce
+		// prechadzaj vsetky stlpce
 		for (j = mat->cols - 1; j >= 0; j--) {
 			if (ELEM(*mat, i, j) == 0.0) {
 				rozdiel_riadkov = i - hladaj_nuly1(mat, i - 1, j, 2);
@@ -323,7 +344,8 @@ int find_triangular_block1(MAT* mat, unsigned int* a, unsigned int* b, unsigned 
 
 }
 
-
+//funkcia sluzi na porovnanie velkosti najdenych blokov predchadzajucich dvoch funkcii
+//uklada adresy toho vacsieho bloku
 int najvacsia_trojuholnikova_matica (MAT* mat, unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d) {
 
 	unsigned int aa, bb, cc, dd;
@@ -346,6 +368,7 @@ int najvacsia_trojuholnikova_matica (MAT* mat, unsigned int* a, unsigned int* b,
 		*d=hh;
 	}
 
+	// ak nebol ani v jednej funkcii najdeny blok, tak vraciame 0
 	if (rozmer1 <1 && rozmer<1)
 		return 0;
 
