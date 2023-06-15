@@ -377,7 +377,7 @@ int najvacsia_trojuholnikova_matica (MAT* mat, unsigned int* a, unsigned int* b,
 
 }
 
-
+//+1 pretoze povodne indexovanie bolo od 0
 void vypis_vysledkov (unsigned int a, unsigned int b, unsigned int c, unsigned int d) {
 	
 		printf("\nNajvacsi suvisly blok v trojuholnikovom tvare:\n");
@@ -385,8 +385,6 @@ void vypis_vysledkov (unsigned int a, unsigned int b, unsigned int c, unsigned i
 		printf("Koniec riadku: %u\n", b+1);
 		printf("Zaciatok stlpca: %u\n", c+1);
 		printf("Koniec stlpca: %u\n", d+1);
-	
-	
 }
 
 
