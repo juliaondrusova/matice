@@ -378,6 +378,17 @@ int najvacsia_trojuholnikova_matica (MAT* mat, unsigned int* a, unsigned int* b,
 }
 
 
+void vypis_vysledkov (unsigned int a, unsigned int b, unsigned int c, unsigned int d) {
+	
+		printf("\nNajvacsi suvisly blok v trojuholnikovom tvare:\n");
+		printf("Zaciatok riadku: %u\n", a+1);
+		printf("Koniec riadku: %u\n", b+1);
+		printf("Zaciatok stlpca: %u\n", c+1);
+		printf("Koniec stlpca: %u\n", d+1);
+	
+	
+}
+
 
 
 
@@ -420,13 +431,7 @@ main() {
 	int vysledok=najvacsia_trojuholnikova_matica(loaded_mat, &a, &b, &c, &d);
 
 	if (vysledok) {
-
-		printf("\nNajvacsi suvisly blok v trojuholnikovom tvare:\n");
-		printf("Zaciatok riadku: %u\n", a);
-		printf("Koniec riadku: %u\n", b);
-		printf("Zaciatok stlpca: %u\n", c);
-		printf("Koniec stlpca: %u\n", d);
-
+		vypis_vysledkov (a,b,c,d);
 	}
 
 	else
